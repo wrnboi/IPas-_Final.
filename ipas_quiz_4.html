@@ -1,0 +1,1242 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>iPAS 淨零碳 刷題系統</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green: #22c55e;
+    --green-dim: #166534;
+    --red: #ef4444;
+    --red-dim: #7f1d1d;
+    --yellow: #eab308;
+    --bg: #0a0f0d;
+    --surface: #111916;
+    --surface2: #1a2420;
+    --border: #2a3f35;
+    --text: #e8f5ef;
+    --text2: #8aab97;
+    --accent: #22c55e;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Noto Sans TC', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* HEADER */
+  header {
+    padding: 22px 48px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface);
+  }
+  .logo {
+    font-family: 'Space Mono', monospace;
+    font-size: 15px;
+    color: var(--green);
+    letter-spacing: 3px;
+  }
+  .stats-bar {
+    display: flex;
+    gap: 36px;
+    font-size: 14px;
+    color: var(--text2);
+  }
+  .stats-bar span { font-family: 'Space Mono', monospace; }
+  .stat-val { color: var(--text); font-weight: 700; }
+
+  /* FILTER BAR */
+  .filter-bar {
+    padding: 16px 48px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    background: var(--surface);
+  }
+  .filter-btn {
+    padding: 8px 20px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text2);
+    font-size: 13px;
+    cursor: pointer;
+    font-family: 'Noto Sans TC', sans-serif;
+    transition: all 0.15s;
+  }
+  .filter-btn:hover { border-color: var(--green); color: var(--green); }
+  .filter-btn.active { background: var(--green); color: #000; border-color: var(--green); font-weight: 700; }
+
+  /* MAIN LAYOUT */
+  .main {
+    display: flex;
+    flex: 1;
+    gap: 0;
+  }
+
+  /* QUESTION PANEL */
+  .q-panel {
+    flex: 1;
+    padding: 56px 72px;
+    max-width: 860px;
+  }
+  .q-meta {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    margin-bottom: 32px;
+  }
+  .q-num-badge {
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    color: var(--text2);
+    border: 1px solid var(--border);
+    padding: 5px 14px;
+    border-radius: 4px;
+  }
+  .q-tag-badge {
+    font-size: 12px;
+    padding: 5px 14px;
+    border-radius: 4px;
+    background: var(--surface2);
+    color: var(--text2);
+    border: 1px solid var(--border);
+  }
+  .q-text {
+    font-size: 20px;
+    line-height: 1.9;
+    margin-bottom: 40px;
+    color: var(--text);
+  }
+  .options {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-bottom: 36px;
+  }
+  .option-btn {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 20px 24px;
+    border-radius: 12px;
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+    text-align: left;
+    font-size: 16px;
+    line-height: 1.7;
+    font-family: 'Noto Sans TC', sans-serif;
+    transition: all 0.15s;
+  }
+  .option-btn:hover:not(:disabled) { border-color: var(--green); background: #0d1f17; }
+  .option-btn:disabled { cursor: default; }
+  .option-btn.selected { border-color: var(--yellow); background: #1a1500; }
+  .option-btn.correct { border-color: var(--green); background: #0d2015; }
+  .option-btn.wrong { border-color: var(--red); background: #1a0d0d; }
+  .opt-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text2);
+    min-width: 24px;
+    padding-top: 2px;
+  }
+  .option-btn.correct .opt-label { color: var(--green); }
+  .option-btn.wrong .opt-label { color: var(--red); }
+  .opt-icon { margin-left: auto; font-size: 18px; min-width: 22px; }
+
+  /* EXPLANATION */
+  .explanation {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--green);
+    border-radius: 10px;
+    padding: 24px 28px;
+    margin-bottom: 36px;
+    font-size: 15px;
+    line-height: 1.9;
+    color: var(--text2);
+    display: none;
+  }
+  .explanation.show { display: block; }
+  .explanation.wrong-exp { border-left-color: var(--red); }
+  .explanation strong { color: var(--text); }
+  .explanation .exp-title {
+    font-size: 12px;
+    font-family: 'Space Mono', monospace;
+    color: var(--green);
+    margin-bottom: 12px;
+    letter-spacing: 1px;
+  }
+  .explanation.wrong-exp .exp-title { color: var(--red); }
+
+  /* NAV BUTTONS */
+  .nav-btns {
+    display: flex;
+    gap: 14px;
+  }
+  .btn {
+    padding: 14px 32px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    font-size: 15px;
+    font-family: 'Noto Sans TC', sans-serif;
+    font-weight: 700;
+    transition: all 0.15s;
+  }
+  .btn-primary { background: var(--green); color: #000; }
+  .btn-primary:hover { background: #16a34a; }
+  .btn-secondary { background: var(--surface2); color: var(--text2); border: 1px solid var(--border); }
+  .btn-secondary:hover { border-color: var(--green); color: var(--green); }
+  .btn:disabled { opacity: 0.4; cursor: default; }
+
+  /* SIDEBAR - QUESTION MAP */
+  .sidebar {
+    width: 320px;
+    border-left: 1px solid var(--border);
+    padding: 32px 24px;
+    overflow-y: auto;
+    background: var(--surface);
+  }
+  .sidebar-title {
+    font-size: 11px;
+    font-family: 'Space Mono', monospace;
+    color: var(--text2);
+    letter-spacing: 2px;
+    margin-bottom: 18px;
+  }
+  .q-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+  .q-dot {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-family: 'Space Mono', monospace;
+    cursor: pointer;
+    color: var(--text2);
+    transition: all 0.1s;
+  }
+  .q-dot:hover { border-color: var(--green); }
+  .q-dot.current { border-color: var(--yellow); color: var(--yellow); }
+  .q-dot.correct { background: #0d2015; border-color: var(--green); color: var(--green); }
+  .q-dot.wrong { background: #1a0d0d; border-color: var(--red); color: var(--red); }
+
+  /* PROGRESS */
+  .progress-wrap {
+    margin-bottom: 24px;
+  }
+  .progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: var(--text2);
+    margin-bottom: 8px;
+  }
+  .progress-bar {
+    height: 5px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--green);
+    border-radius: 3px;
+    transition: width 0.3s;
+  }
+
+  /* SCORE SCREEN */
+  .score-screen {
+    display: none;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 28px;
+    padding: 60px;
+  }
+  .score-screen.show { display: flex; }
+  .score-circle {
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    border: 3px solid var(--green);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Space Mono', monospace;
+  }
+  .score-num { font-size: 52px; font-weight: 700; color: var(--green); }
+  .score-label { font-size: 13px; color: var(--text2); }
+  .score-detail { font-size: 16px; color: var(--text2); text-align: center; line-height: 2.2; }
+
+  /* RESPONSIVE */
+  @media (max-width: 900px) {
+    .sidebar { display: none; }
+    .q-panel { padding: 32px 28px; }
+    .stats-bar { gap: 16px; }
+    header { padding: 18px 24px; }
+    .filter-bar { padding: 14px 24px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">iPAS // 淨零碳 刷題</div>
+  <div class="stats-bar">
+    <span>答對 <span class="stat-val" id="hdr-correct">0</span></span>
+    <span>答錯 <span class="stat-val" id="hdr-wrong">0</span></span>
+    <span>正確率 <span class="stat-val" id="hdr-rate">—</span></span>
+  </div>
+</header>
+
+<div class="filter-bar">
+  <button class="filter-btn active" onclick="setFilter('all')">全部（155題）</button>
+  <button class="filter-btn" onclick="setFilter('科1')">考科1模擬題</button>
+  <button class="filter-btn" onclick="setFilter('COP歷程')">COP歷程</button>
+  <button class="filter-btn" onclick="setFilter('專有名詞')">專有名詞</button>
+  <button class="filter-btn" onclick="setFilter('CDP/SBTi/RE100')">CDP/SBTi/RE100</button>
+  <button class="filter-btn" onclick="setFilter('GRI/TCFD')">GRI/TCFD</button>
+  <button class="filter-btn" onclick="setFilter('CBAM詳細')">CBAM</button>
+  <button class="filter-btn" onclick="setFilter('台灣淨零')">台灣淨零</button>
+  <button class="filter-btn" onclick="setFilter('碳定價制度')">碳定價</button>
+  <button class="filter-btn" onclick="setFilter('ISO14068')">ISO 14068</button>
+  <button class="filter-btn" onclick="setFilter('盤查原則')">盤查原則</button>
+  <button class="filter-btn" onclick="setFilter('邊界')">邊界設定</button>
+  <button class="filter-btn" onclick="setFilter('量化')">量化計算</button>
+  <button class="filter-btn" onclick="setFilter('碳足跡')">碳足跡CFP</button>
+  <button class="filter-btn" onclick="setFilter('PCR')">PCR</button>
+  <button class="filter-btn" onclick="setFilter('LCA')">LCA</button>
+  <button class="filter-btn" onclick="setFilter('wrong')">❌ 錯題</button>
+  <button class="filter-btn" onclick="shuffle()">🔀 隨機順序</button>
+</div>
+
+<div class="main" id="main-area">
+  <!-- QUIZ PANEL -->
+  <div class="q-panel" id="quiz-panel">
+    <div class="q-meta">
+      <div class="q-num-badge" id="q-num-badge">Q 1 / 80</div>
+      <div class="q-tag-badge" id="q-tag-badge">考科1</div>
+    </div>
+    <div class="q-text" id="q-text"></div>
+    <div class="options" id="options"></div>
+    <div class="explanation" id="explanation">
+      <div class="exp-title" id="exp-title">✓ 解析</div>
+      <div id="exp-content"></div>
+    </div>
+    <div class="nav-btns">
+      <button class="btn btn-secondary" onclick="prevQ()">← 上一題</button>
+      <button class="btn btn-primary" id="next-btn" onclick="nextQ()">下一題 →</button>
+    </div>
+  </div>
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="progress-wrap">
+      <div class="progress-label">
+        <span>進度</span>
+        <span id="progress-text">0 / 0</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+    </div>
+    <div class="sidebar-title">題目列表</div>
+    <div class="q-grid" id="q-grid"></div>
+    <button class="btn btn-secondary" style="width:100%;margin-top:8px" onclick="resetAll()">重新開始</button>
+  </div>
+</div>
+
+<!-- SCORE SCREEN -->
+<div class="score-screen" id="score-screen">
+  <div style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:3px;color:var(--text2)">完成測驗</div>
+  <div class="score-circle">
+    <div class="score-num" id="score-num">0%</div>
+    <div class="score-label">正確率</div>
+  </div>
+  <div class="score-detail" id="score-detail"></div>
+  <div style="display:flex;gap:12px;margin-top:8px">
+    <button class="btn btn-primary" onclick="resetAll()">再做一次</button>
+    <button class="btn btn-secondary" onclick="setFilter('wrong')">複習錯題</button>
+  </div>
+</div>
+
+<script>
+// ==================== ALL QUESTIONS ====================
+const ALL_QUESTIONS = [
+  // ===== 考科1：淨零碳規劃管理基礎概論（模擬樣題）=====
+  {
+    id: 1, tag: '科1',
+    q: '哪一項不是推動抵換類型計畫的好處？',
+    opts: ['增加全球二氧化碳的總量','刺激低碳技術的發展','為減碳提供經濟誘因','幫助國家達到他們的排放目標'],
+    ans: 0,
+    exp: '碳抵換（Carbon Offset）的設計邏輯是「總量中性」——A地排放、B地減少，全球CO₂淨排放不增加。若說抵換會「增加」CO₂總量，根本違反抵換設計的核心目的，故 A 為錯誤敘述（即「不是好處」）。B、C、D 均為抵換計畫的實際效益。'
+  },
+  {
+    id: 2, tag: '科1',
+    q: '哪一項不是環境部認可的減量政策工具？',
+    opts: ['碳費','總量管制排放交易','用國際自願碳權抵免碳費','環評增量抵換'],
+    ans: 2,
+    exp: '台灣環境部認可的工具包含：碳費、總量管制排放交易（ETS）、環評增量抵換。但「國際自願碳市場（VCR）的碳權」屬於企業自願購買，不具備抵免台灣碳費的法律效力，故 C 不是環境部認可的工具。'
+  },
+  {
+    id: 3, tag: '科1',
+    q: '導入 ISO 14068-1 的碳中和應用無法達到哪個效益？',
+    opts: ['量化及減少溫室氣體排放','提升聲譽與風險管控','經由抵換達到碳中和可以符合歐盟CBAM的抵減碳關稅','鑑別效率不佳領域，改善整體表現，進行成本管控'],
+    ans: 2,
+    exp: 'CBAM（碳邊境調整機制）看的是實際生產過程的排放量，不承認企業透過碳中和宣告來折抵碳關稅義務。ISO 14068-1 的碳中和與 CBAM 是兩套完全不同的制度，無法互相抵換，故 C 是錯誤敘述。'
+  },
+  {
+    id: 4, tag: '科1',
+    q: 'SBTi認證審核項目中，展現企圖心（Ambition）是以應符合幾°C的情境為其減碳目標？',
+    opts: ['0.5°C','1.0°C','1.5°C','2°C'],
+    ans: 2,
+    exp: 'SBTi（科學基礎減量目標倡議）審核「企圖心（Ambition）」時，要求企業設定的減碳目標必須符合將全球升溫控制在 1.5°C 以內的情境。2°C 是舊標準，SBTi 現已全面升級為 1.5°C 要求。'
+  },
+  {
+    id: 5, tag: '科1',
+    q: '哪一項不是歐盟碳邊境調整機制（CBAM）管制的產品對象？',
+    opts: ['氫','肥料','鋼鐵','塑膠'],
+    ans: 3,
+    exp: '歐盟CBAM目前列管：鋼鐵、鋁、水泥、肥料、電力、氫。塑膠目前尚未納入列管清單（未來可能納入），故 D 塑膠是正確答案（不是CBAM管制對象）。'
+  },
+  {
+    id: 6, tag: '科1',
+    q: '下列哪一項不是巴黎協定第二條所列的目標？',
+    opts: ['追求2050年淨零排放','限制全球溫升低於工業化前水準2°C以下，追求1.5°C以內','以不威脅糧食生產的方式增強氣候韌性，使溫室氣體朝低排放發展','使資金流向符合溫室氣體低排放路徑'],
+    ans: 0,
+    exp: '巴黎協定第2條列出三個目標：(1)溫升控制2°C/追求1.5°C、(2)不威脅糧食生產的調適、(3)資金流向低排放路徑。「追求2050年淨零排放」並非第2條的明文目標，淨零是各國自訂NDC的方向，故 A 為錯誤敘述。'
+  },
+  {
+    id: 7, tag: '科1',
+    q: '我國永續報告書編製申報及公司治理3.0所使用的應參考標準，何者為非？',
+    opts: ['全球申報準則（GRI）','碳揭露專案（CDP）','氣候風險財務揭露（TCFD）','永續會計準則委員會（SASB）'],
+    ans: 1,
+    exp: '台灣公司治理3.0要求永續報告書應參考：GRI、TCFD、SASB。CDP（碳揭露計畫）是企業自願填報的問卷揭露平台，屬於揭露管道而非報告書編製標準，故 B 為非。'
+  },
+  {
+    id: 8, tag: '科1',
+    q: '下列有關能源轉型的論述何者為非？',
+    opts: ['有韌性的能源系統應注重環境永續性、可負擔性與能源安全','核能是一種再生能源','參加氣候俱樂部不等於免除CBAM義務','推動循環經濟可以提高總物質效率化使用'],
+    ans: 1,
+    exp: '核能是低碳能源，但不是再生能源。再生能源定義為「來自自然界可持續補充的能源」（太陽、風、水等）。核燃料（鈾）是有限資源，故不屬再生能源。這是常見考試陷阱，故 B 為錯誤敘述。'
+  },
+  {
+    id: 9, tag: '科1',
+    q: '歐盟進口商對於CBAM憑證抵免可以使用何者出口商的抵免證明？',
+    opts: ['貨物稅','營業稅','自願碳市場減量額度','外顯碳價（碳稅費/排放交易）'],
+    ans: 3,
+    exp: '歐盟CBAM允許進口商若能證明出口國已對該產品徵收「外顯碳價（Explicit Carbon Price）」——即官方強制的碳稅或ETS排放交易——則可申請抵減CBAM憑證數量。貨物稅、營業稅、自願碳市場碳權均不被CBAM承認。'
+  },
+  {
+    id: 10, tag: '科1',
+    q: '歐盟CBAM排放量計算的概念何者為是？',
+    opts: ['應計算至全生命週期的排放量','以生產總重量（含包裝與廢料）來計算重量','與ISO 14064-1不同，外界輸入熱源要計入直接排放','廢棄物的處理也要計算排放'],
+    ans: 2,
+    exp: 'CBAM的計算邏輯：只算生產階段（非全生命週期）；重量以出售產品淨重計算（不含包裝廢料）；廢棄物處理不計入。正確的是 C：與ISO 14064-1不同，CBAM將外購熱能/蒸汽納入直接排放計算，ISO 14064-1則歸為間接排放。'
+  },
+  {
+    id: 11, tag: '科1',
+    q: '碳稅費與排放交易之間的觀念，何者為非？',
+    opts: ['排放交易為強制性市場，應設定排放上限','排放交易制度得在主管機關的授權下使用認可的減量額度進行超額排放量扣抵','只要是排放交易市場，涵蓋的部門別都一致','企業的總體碳成本可以包含法遵管制成本、內部碳定價成本與間接碳成本'],
+    ans: 2,
+    exp: '各國ETS涵蓋的產業範圍差異很大：歐盟ETS涵蓋電力、工業、航空；台灣碳費聚焦大型排放源。「只要是排放交易市場，部門別都一致」完全錯誤，故 C 為非。A、B、D 均為正確敘述。'
+  },
+  {
+    id: 12, tag: '科1',
+    q: '溫室氣體減量或移除計畫對於品質的要求，何者為非？',
+    opts: ['計畫應確保高度投資效益才執行','應重視法律外加性，若有法規強制義務則無碳權產出','應採用認可的國內外方法學以保守的方式估算減量/移除成果','相關的減量/移除計畫書應完成縝密的社會或環境影響衝擊的評估'],
+    ans: 0,
+    exp: '碳減量計畫的品質要求包含：外加性（非法規強制才有碳權）、採用認可方法學、完成社環影響評估。「投資效益高低」從來不是品質門檻，不能說「投資報酬率不夠就不做」，故 A 為非。'
+  },
+  {
+    id: 13, tag: '科1',
+    q: '何者不是 ISO 14068-1 所涵蓋的範疇？',
+    opts: ['一場演唱會活動碳中和','新北市政府大樓年度排放碳中和','賣產品給客戶做碳中和宣告','國家淨零排放宣告'],
+    ans: 3,
+    exp: 'ISO 14068-1可用於：活動（演唱會）、組織（政府大樓）、產品（賣給客戶的碳中和宣告）。但「國家層級的淨零排放宣告」屬於政策目標，有專屬的國際框架（UNFCCC、IPCC），不適用 ISO 14068-1，故 D 為不涵蓋範疇。'
+  },
+  {
+    id: 14, tag: '科1',
+    q: '有關使用執行碳中和的概念，何者為是？',
+    opts: ['執行碳中和宣告後，組織的溫室氣體排放清冊數據就歸零了','ISO 14068-1的碳中和優先順序是先買碳權抵銷，再考慮做減量','ISO 14068-1使用的碳權不需被註銷，以後還能賣錢','ISO 14068-1對於活動的碳中和之範疇包括了規劃期、準備期、執行期、及活動後各個階段的排放'],
+    ans: 3,
+    exp: 'D 正確：ISO 14068-1對「活動」碳中和的範疇涵蓋規劃期、準備期、執行期及活動後各階段。其他選項錯誤：A-宣告後清冊數據不歸零；B-正確順序是先減量再抵換；C-碳權必須被註銷才能宣告碳中和。'
+  },
+  {
+    id: 15, tag: '科1',
+    q: '有關ISO 14068-1提升溫室氣體移除的概念，何者為是？',
+    opts: ['溫室氣體移除不用估計對於環境與社會影響','可以在總結報告前再去監測溫室氣體移除量即可','溫室氣體移除之結果若被撤銷，則應該於報告中增計溫室氣體排放量','溫室氣體移除計畫不需要準備佐證文件'],
+    ans: 2,
+    exp: 'C 正確：若移除成果被撤銷（如種的樹被砍伐），應在報告中增計排放量，這是「非永久性風險」的處理原則。錯誤選項：A-必須評估環境社會影響；B-必須持續監測，不能只在最後量一次；D-需準備完整佐證文件。'
+  },
+  {
+    id: 16, tag: '科1',
+    q: '有關 ISO 14068-1 的概念，何者為非？',
+    opts: ['ISO 14068-1取消了碳中和管理計畫書的確證要求','ISO 14068-1管理計畫長期以2060淨零排放為設計要求','ISO 14068-1採用ISO 14064-3為主要的確證及查證規範','ISO 14068-1中有要求強化溫室氣體移除的思考'],
+    ans: 1,
+    exp: 'B 為錯誤：ISO 14068-1的長期設計要求是對齊「2050年淨零」，不是2060年（2060是中國的碳中和目標，非國際標準）。其他選項正確：A-確證要求已取消；C-採用 ISO 14064-3 為查驗規範；D-有要求強化移除思考。'
+  },
+  {
+    id: 17, tag: '科1',
+    q: '有關碳邊境調整制度敘述，何者為是？',
+    opts: ['歐盟CBAM制度不管是排放範疇還是列管產品品項都已經成為國際標準','國際貿易規則中，大多情形下出口者要付關稅，所以碳關稅衝擊很大','繳納碳稅費的證明文件是提供給歐洲進口商的必備文件，可以退稅給出口者','歐盟啟動CBAM主要宣稱是為了解決碳洩漏的問題'],
+    ans: 3,
+    exp: 'D 正確：歐盟官方宣稱CBAM的目的是防止「碳洩漏（Carbon Leakage）」——企業為逃避碳成本而將生產移往規範寬鬆的國家。錯誤選項：A-CBAM不是國際標準；B-通常是進口商付關稅，非出口者；C-抵減是給進口商用，不是退稅給出口者。'
+  },
+  {
+    id: 18, tag: '科1',
+    q: '有關GRI與SASB標準間的差異，何者為非？',
+    opts: ['GRI主要是跟利害關係者議合','SASB主要以投資人為溝通面向','GRI與SASB在永續報告中需要分開兩個大章節分別表述資料','GRI準則包括了通用準則、行業準則、主題準則'],
+    ans: 2,
+    exp: 'C 為錯誤：GRI與SASB可整合在同一份永續報告中，不需強制分開兩個大章節。記憶重點：GRI針對所有利害關係人（廣）；SASB主要針對投資人（窄但財務相關性強）。GRI準則分三層：通用/行業/主題準則。'
+  },
+  {
+    id: 19, tag: '科1',
+    q: '有關京都議定書的敘述何者為是？',
+    opts: ['目前2024年仍可申請新的清潔發展機制（CDM）專案','開發中國家（非附件一締約方）也應負責減量義務','京都議定書導入了聯合履行（JI）、清潔發展機制（CDM）與國際排放交易（IET）三種市場機制','京都議定書自1997年起執行，僅有一個承諾期'],
+    ans: 2,
+    exp: 'C 正確：京都議定書三大市場機制為JI（聯合履行，已開發國家之間）、CDM（清潔發展機制，已開發→開發中）、IET（國際排放交易，國家間配額買賣）。錯誤選項：A-CDM已於2020年停止接受新申請；B-非附件一（開發中國家）無強制減量義務；D-有兩個承諾期（2008-2012、2013-2020）。'
+  },
+  {
+    id: 20, tag: '科1',
+    q: '下列何者不是碳揭露計畫的揭露範疇領域？',
+    opts: ['土壤','氣候變遷','水','塑膠'],
+    ans: 0,
+    exp: 'CDP（碳揭露計畫）目前三大揭露領域為：氣候變遷、水安全、森林。土壤不是CDP的獨立揭露領域（注意：D塑膠也不是，但題目問「不是」，答案是A土壤，因CDP有三個明確領域，土壤和塑膠都不在其中，但考題標準答案為A）。'
+  },
+
+  // ===== 考科2：溫室氣體盤查原則（1.1節範例考題）=====
+  {
+    id: 21, tag: '盤查原則',
+    q: '溫室氣體盤查報告原則「不」包括以下哪項？',
+    opts: ['準確性','一致性','極大化','完整性'],
+    ans: 2,
+    exp: '溫室氣體盤查報告的五大原則為：相關性、完整性、一致性、準確性、透明度。「極大化」並非盤查原則之一，故答案為 C。'
+  },
+  {
+    id: 22, tag: '盤查原則',
+    q: '溫室氣體盤查報告原則中，何者是為了使溫室氣體相關資訊能有意義比較，以及容許有意義的跨年度或同產業排放比較？',
+    opts: ['準確性','一致性','完整性','透明度'],
+    ans: 1,
+    exp: '一致性原則：能對溫室氣體相關資訊進行有意義之比較，使用相同的數據來源和計算方法，才能跨年度或跨企業進行有效比較，故答案為 B。'
+  },
+  {
+    id: 23, tag: '盤查原則',
+    q: '依據標準，組織型溫室氣體盤查須納入所有相關的溫室氣體排放與移除。其遵循的盤查原則是？',
+    opts: ['準確性','完整性','一致性','相關性'],
+    ans: 1,
+    exp: '完整性原則：納入所有相關的溫室氣體排放與移除，確保盤查結果全面。「納入所有排放」對應的就是「完整性」，故答案為 B。'
+  },
+  {
+    id: 24, tag: '盤查原則',
+    q: '企業進行溫室氣體盤查的第一步是什麼？',
+    opts: ['設定邊界鑑別排放源','收集活動數據與計算排放量','請高階主管指派溫室氣體盤查小組','文件化紀錄'],
+    ans: 2,
+    exp: '盤查第一步是「邀請高階主管指派溫室氣體盤查小組」，高階主管的支持確保盤查工作獲得必要資源。記憶口訣：邊→源→算→報→查，但最前面還要先組建團隊，故答案為 C。'
+  },
+  {
+    id: 25, tag: '盤查原則',
+    q: '在進行溫室氣體盤查時，如何確保報告的完整性？',
+    opts: ['報告主要排放源','僅關注直接排放','包括所有相關的直接和間接排放源','忽略間接排放源'],
+    ans: 2,
+    exp: '完整性要求納入「所有相關的直接和間接排放源」，不能只報告直接排放或主要排放源，故答案為 C。'
+  },
+  {
+    id: 26, tag: '盤查原則',
+    q: '組織如何確保其溫室氣體盤查的一致性，以便於時間上的比較？',
+    opts: ['每年更換計算方法','維持使用相同的數據來源和計算方法','僅報告最大的排放源','忽略小規模排放源'],
+    ans: 1,
+    exp: '一致性原則要求維持相同的數據來源和計算方法，才能進行跨年度的有效比較。每年更換方法會破壞可比較性，故答案為 B。'
+  },
+  {
+    id: 27, tag: '盤查原則',
+    q: '組織在溫室氣體報告中如何體現透明度原則？',
+    opts: ['僅報告對組織有利的信息','隱藏計算方法','充分且適當地揭露溫室氣體相關資訊','避免公開不確定性數據'],
+    ans: 2,
+    exp: '透明度原則：揭露充分且適當的溫室氣體相關資訊，使預期使用者能作出合理可信之決策，故答案為 C。'
+  },
+  {
+    id: 28, tag: '盤查原則',
+    q: '選擇溫室氣體報告中數據和方法的過程中，應依據什麼原則來確保其相關性？',
+    opts: ['報告所有可能的數據','基於預期使用者的需求選擇相關的溫室氣體源和匯','僅報告國際間公認的溫室氣體','避免使用地方性的溫室氣體數據'],
+    ans: 1,
+    exp: '相關性原則：選擇適合預期使用者需求相關的溫室氣體源、匯、數據及方法，確保報告的實用性和有效性，故答案為 B。'
+  },
+  {
+    id: 29, tag: '盤查原則',
+    q: '溫室氣體報告的一般原則旨在確保什麼？',
+    opts: ['報告僅包含正面影響','資訊經過真實公正的考量','報告僅限於公開資料','忽略小規模排放源的影響'],
+    ans: 1,
+    exp: '溫室氣體報告一般原則的核心，是確保報告中的資訊「經過真實和公正的考量」，以提高報告的可信度和準確性，故答案為 B。'
+  },
+  {
+    id: 30, tag: '盤查原則',
+    q: '下列何項標準規定組織層級對溫室氣體（GHG）排放與移除之量化報告之原則與要求事項？',
+    opts: ['ISO 14064-1','ISO 14064-2','ISO 14067','ISO 14064-3'],
+    ans: 0,
+    exp: 'ISO 14064-1 規定「組織層級」對溫室氣體排放與移除之量化報告。ISO 14064-2 為專案層級、ISO 14067 為產品碳足跡、ISO 14064-3 為確證與查證規範，故答案為 A。'
+  },
+
+  // ===== 邊界設定（1.2節）=====
+  {
+    id: 31, tag: '邊界',
+    q: '依據標準，溫室氣體彙總方法包含以下幾項？',
+    opts: ['財務控制法','營運控制法','股權持分法','以上皆是'],
+    ans: 3,
+    exp: 'ISO 14064-1 規定三種組織邊界彙總方法：財務控制法、營運控制法、股權持分法，三者皆是，故答案為 D。'
+  },
+  {
+    id: 32, tag: '邊界',
+    q: '依據環境部盤查作業指引要求，我國列管事業應以何種方式進行溫室氣體彙總方法？',
+    opts: ['財務控制法','營運控制法','股權持分法','以上皆可'],
+    ans: 1,
+    exp: '環境部要求納管事業採用「營運控制法」——擁有完全的權力主導並執行事業體營運政策者，應100%認列其溫室氣體排放量，故答案為 B。'
+  },
+  {
+    id: 33, tag: '邊界',
+    q: '下列何者非 ISO 14064-1:2018 強制要求應揭露項目？',
+    opts: ['生物源溫室氣體排放','生物源二氧化碳移除之處理','電力之處理方式','產生自化石與生質碳之GHG排放與移除'],
+    ans: 3,
+    exp: '在溫室氣體盤查類別中，非生物源排放、人微生物源排放及非人微生物源排放若量化與報告應分別計算，「產生自化石與生質碳之GHG排放與移除」並非ISO14064-1強制揭露項目，故答案為 D。'
+  },
+  {
+    id: 34, tag: '邊界',
+    q: '請問 A 公司燃燒天然氣鍋爐產生蒸氣以供場外廠商使用，請問這是屬於何種類別排放？',
+    opts: ['類別1 直接溫室氣體排放','類別2 來自輸入能源之間接溫室氣體排放量','類別3 來自運輸之間接溫室氣體排放量','類別4 來自組織使用的產品之間接溫室氣體排放量'],
+    ans: 0,
+    exp: 'A公司自己燃燒天然氣→屬於自己直接產生的排放→類別1（直接排放）。判斷重點：排放源是否在組織自己的設施內燃燒或操作，故答案為 A。'
+  },
+  {
+    id: 35, tag: '邊界',
+    q: '請問 B 公司引進隔壁廠商燃燒天然氣鍋爐產生的蒸氣作為製程使用，請問這是屬於何種類別排放？',
+    opts: ['類別1 直接溫室氣體排放','類別2 來自輸入能源之間接溫室氣體排放量','類別3 來自運輸之間接溫室氣體排放量','類別4 來自組織使用的產品之間接溫室氣體排放量'],
+    ans: 1,
+    exp: 'B公司「購買/引進」外部廠商產生的蒸汽→屬於購買能源的間接排放→類別2（來自輸入能源的間接排放）。類別2包含外購電力、外購蒸汽等，故答案為 B。'
+  },
+  {
+    id: 36, tag: '邊界',
+    q: 'C 公司在溫室氣體盤查報告書提到盤查的範圍包含桃園廠與小港廠。依據 ISO 14064-1:2018，請問這段描述的是界定何種邊界？',
+    opts: ['組織邊界','營運邊界','報告邊界','系統邊界'],
+    ans: 0,
+    exp: '描述「哪些地點/設施屬於盤查範圍」，這是「組織邊界」的界定（確定哪些實體/廠區納入）。報告邊界則是後續確定要報告哪些排放類別，故答案為 A。'
+  },
+  {
+    id: 37, tag: '邊界',
+    q: 'ISO 14064-1:2018 界定全球暖化潛勢（GWP）的溫室氣體（GHG）中，下列何者為非？',
+    opts: ['二氧化碳','氦氣','氧化亞氮','六氟化硫'],
+    ans: 1,
+    exp: 'ISO 14064-1 列管的七種溫室氣體為：CO₂、CH₄（甲烷）、N₂O（氧化亞氮）、NF₃（三氟化氮）、SF₆（六氟化硫）、HFCs（氫氟碳化物）、PFCs（全氟碳化物）。氦氣（He）不是溫室氣體，故答案為 B。'
+  },
+  {
+    id: 38, tag: '邊界',
+    q: '在溫室氣體盤查中，組織邊界的設定可能根據什麼來進行？',
+    opts: ['法規要求','國際供應鏈需求','組織的財務控制權法','公眾的意見反應'],
+    ans: 2,
+    exp: '組織邊界設定的依據是組織本身對事業體的控制方式：財務控制法、營運控制法或股權持分法，三者皆為邊界設定的可能依據，考題選項中最正確的是 C（財務控制權法是明確的方法論）。'
+  },
+  {
+    id: 39, tag: '邊界',
+    q: '組織在建立報告邊界時，應該包含哪些內容？',
+    opts: ['直接溫室氣體排放和移除量','來自輸入能源的間接溫室氣體排放量','來自組織使用的產品的間接溫室氣體排放量','以上皆是'],
+    ans: 3,
+    exp: '報告邊界應包含所有與組織相關的直接與間接排放：類別1（直接）、類別2（輸入能源間接）、類別3-6（其他間接）等，故應以上皆是，答案為 D。'
+  },
+  {
+    id: 40, tag: '邊界',
+    q: '在溫室氣體盤查中，哪一項不是間接溫室氣體排放與移除的來源之一？',
+    opts: ['來自輸入能源的間接溫室氣體排放量','來自組織使用的產品的間接溫室氣體排放量','來自運輸的間接溫室氣體排放量','來自直接排放源的間接溫室氣體排放量'],
+    ans: 3,
+    exp: '「來自直接排放源的間接排放量」本身就是矛盾用語：直接排放就是直接排放，不會同時是間接排放的來源。間接排放（類別2-6）是指由組織外部活動所產生的排放，故答案為 D。'
+  },
+
+  // ===== 量化計算（1.3節）=====
+  {
+    id: 41, tag: '量化',
+    q: '下列何種情況下無須重新計算基準年溫室氣體盤查清冊？',
+    opts: ['報告邊界改變','與隔壁廠房合併','量化方法改變導致溫室氣體排放量發生很大改變','生產產量發生重大變化'],
+    ans: 3,
+    exp: '需重新計算基準年的情況：報告邊界或組織結構性變更（合併/併購/撤資）、計算方法或排放係數改變、發現重大誤差（>3%門檻）。「生產產量發生重大變化」不需重新計算基準年，故答案為 D。'
+  },
+  {
+    id: 42, tag: '量化',
+    q: '請說明溫室氣體量化方法中，排放係數法的計算公式，何者正確？',
+    opts: ['CO₂排放當量 = 活動數據 × 排放係數 × GWP','CO₂排放當量 = 活動數據 × 人口數量 × GWP','CO₂排放當量 = 活動數據 × 面積占比 × GWP','CO₂排放當量 = 活動數據 × 重量占比 × GWP'],
+    ans: 0,
+    exp: '排放係數法計算公式：CO₂e排放量 = 活動數據（燃料耗用量）× GHG排放係數 × 全球暖化潛勢（GWP）值。此為最常用的量化方法，故答案為 A。'
+  },
+  {
+    id: 43, tag: '量化',
+    q: '下列哪種類排放係數的不確定性最高？',
+    opts: ['國際排放係數','量測/質能平衡係數','區域排放係數','國家排放係數'],
+    ans: 0,
+    exp: '排放係數不確定性由高到低：國際係數（最高，適用範圍最廣但最不精確）→ 國家係數 → 區域係數 → 量測/質能平衡係數（最低，最精確）。故答案為 A，國際排放係數不確定性最高。'
+  },
+  {
+    id: 44, tag: '量化',
+    q: '進行溫室氣體排放量計算時所引用的IPCC全球暖化潛勢值，應挑選對環境影響幾年的？',
+    opts: ['50年','100年','200年','500年'],
+    ans: 1,
+    exp: 'IPCC規定全球暖化潛勢（GWP）的時間界限應為「100年」。在計算CO₂e排放當量時，統一使用GWP-100的數值，故答案為 B。'
+  },
+  {
+    id: 45, tag: '量化',
+    q: '當組織進行溫室氣體源與匯的鑑別時，以下哪項做法是必須的？',
+    opts: ['僅考慮直接排放源','忽略所有間接排放源','文件化納入所有相關的溫室氣體排放與移除','僅關注能源消耗相關的排放'],
+    ans: 2,
+    exp: '組織必須全面鑑別並「文件化」納入報告邊界內所有相關的溫室氣體源與匯，包括直接排放、能源間接排放及其他間接排放，確保完整性，故答案為 C。'
+  },
+  {
+    id: 46, tag: '量化',
+    q: '直接監測法的特點是下列何者？',
+    opts: ['成本低廉且易於實施','準確度較高但少見','常用於計算間接排放','基於估算而非實際測量'],
+    ans: 1,
+    exp: '直接監測法直接監測排氣濃度和流率量測排放量，準確度高，但由於成本高、技術複雜，實際應用中較少見，故答案為 B。'
+  },
+  {
+    id: 47, tag: '量化',
+    q: '下列何種量化方法可以直接監測排氣濃度和流率來量測溫室氣體排放量？',
+    opts: ['直接監測法','質量平衡法','排放係數法','估算方法'],
+    ans: 0,
+    exp: '直接監測法（Continuous Emission Monitoring）：透過儀器直接測量排氣的GHG濃度和體積流率，是最精確的量化方式，故答案為 A。'
+  },
+  {
+    id: 48, tag: '量化',
+    q: '組織建立基準年溫室氣體排放量與移除量的歷史基準時，應考慮哪些因素？',
+    opts: ['選擇公司創立年作為基準年','使用代表性且可驗證的數據','僅基於預算決定','選擇任意一年作為基準年'],
+    ans: 1,
+    exp: '選擇基準年時應使用「能代表組織現行報告邊界且可取得查證的數據」，通常為單年度數據，確保基準年具代表性和可靠性，故答案為 B。'
+  },
+  {
+    id: 49, tag: '量化',
+    q: '公司今年耗用乙炔（C₂H₂，分子量26）共200公斤，用於金屬熔接作業。依質量平衡法計算，此作業共排放多少公斤的二氧化碳？',
+    opts: ['676.9230公斤','338.4610公斤','67.6920公斤','以上皆非'],
+    ans: 0,
+    exp: '化學反應：2C₂H₂ + 5O₂ → 4CO₂ + 2H₂O。乙炔的CO₂排放係數 = 88/26 = 3.3846。200kg × 3.3846 = 676.9230 kg CO₂，故答案為 A。關鍵：每2個乙炔分子（分子量2×26=52）產生4個CO₂（分子量4×44=176），係數=176/52=88/26。'
+  },
+  {
+    id: 50, tag: '量化',
+    q: '公司使用含碳量5%的焊條進行熔接作業，共使用500公斤焊條。依質量平衡法計算，此作業共排放多少公斤的二氧化碳？（C原子量12，O原子量16）',
+    opts: ['91.6667公斤','100.0000公斤','183.3333公斤','19.6667公斤'],
+    ans: 0,
+    exp: '步驟：500kg × 5% = 25kg碳。反應：C + O₂ → CO₂。排放係數 = 44/12 = 3.6667。25kg × 3.6667 = 91.6667 kg CO₂，故答案為 A。'
+  },
+
+  // ===== 碳足跡 CFP（2.1節）=====
+  {
+    id: 51, tag: '碳足跡',
+    q: '碳足跡量化資訊應於碳足跡研究報告中揭露，以下何者可以不包含於報告之中？',
+    opts: ['針對電力之處理','選定的分配方法','功能單位或宣告單位','執行時間'],
+    ans: 3,
+    exp: 'CFP研究報告必須揭露：功能單位、系統界限、數據收集、截斷準則、分配方法、電力處理、GHG清冊、敏感度分析等。「執行時間」並非強制揭露項目，故答案為 D。'
+  },
+  {
+    id: 52, tag: '碳足跡',
+    q: '碳足跡量化資訊應於碳足跡研究報告中揭露，以下何者應包含於報告之中？',
+    opts: ['數據收集資訊，包括數據來源','生產排程','內外部議題','審查會議結論'],
+    ans: 0,
+    exp: '數據收集資訊（含數據來源）是CFP研究報告的強制揭露項目，確保透明度和可再現性。生產排程、內外部議題、審查會議結論均不是必要揭露內容，故答案為 A。'
+  },
+  {
+    id: 53, tag: '碳足跡',
+    q: '產品碳足跡計算中的生命週期評估主要是依據哪份ISO標準文件？',
+    opts: ['ISO 14040','ISO 50001','ISO 9001','ISO 14064-1'],
+    ans: 0,
+    exp: 'ISO 14067產品碳足跡標準中的生命週期評估（LCA）主要依據ISO 14040（LCA原則與架構）及ISO 14044（LCA要求與指引）。ISO 50001是能源管理；ISO 9001是品質管理，故答案為 A。'
+  },
+  {
+    id: 54, tag: '碳足跡',
+    q: '在組織邊界外所獲得的數據稱之為？',
+    opts: ['初級數據','次級數據','場址特定數據','網路資料庫數據'],
+    ans: 1,
+    exp: '初級數據（Primary Data）：直接從現場測量或收集的數據。次級數據（Secondary Data）：從組織邊界外獲得的數據，如資料庫、文獻、行業平均值等。故答案為 B。'
+  },
+  {
+    id: 55, tag: '碳足跡',
+    q: '產品碳足跡（CFP）量化時，為何需要考慮產品/活動的整個生命週期？',
+    opts: ['降低成本','簡化分析過程','確保量化結果的全面性和準確性','增加報告的頁數'],
+    ans: 2,
+    exp: '生命週期觀點原則：考量從原物料取得→製造→運輸/配送→使用→生命終結的整個過程，確保CFP量化結果能全面反映產品對環境影響的真實情況，故答案為 C。'
+  },
+  {
+    id: 56, tag: '碳足跡',
+    q: 'CFP研究中，功能單位或宣告單位的主要目的是什麼？',
+    opts: ['減少數據量','提供與其相關投入與產出之參考','增加報告的複雜度','僅為了滿足標準要求'],
+    ans: 1,
+    exp: '功能單位（Functional Unit）提供了一個明確的參考點，用於量化和比較產品系統的環境影響，使CFP研究的結果可被合理評估和比較，故答案為 B。'
+  },
+  {
+    id: 57, tag: '碳足跡',
+    q: 'CFP研究中，當需要做出決定時，為什麼應優先參照自然科學方法？',
+    opts: ['自然科學方法成本較低','增加研究的創新性','保證結果的客觀性和可靠性','簡化研究過程'],
+    ans: 2,
+    exp: '科學方法之優先性原則：在CFP研究中應優先採用自然科學（物理、化學、生物學），確保決策的客觀性和結果的可靠性，故答案為 C。'
+  },
+  {
+    id: 58, tag: '碳足跡',
+    q: 'CFP研究如何確保完整性？',
+    opts: ['僅關注主要GHG排放源','忽略不重要的GHG排放源','納入所有重大GHG排放與移除量','僅計算直接排放'],
+    ans: 2,
+    exp: '完整性原則：納入研究產品系統中CFP提供重大貢獻的所有GHG排放與移除量，重大性程度依截斷準則決定，故答案為 C。'
+  },
+  {
+    id: 59, tag: '碳足跡',
+    q: '在CFP研究報告中，透明度原則要求什麼？',
+    opts: ['僅報告最終結果','不揭露敏感數據','適當揭露假設、方法及數據的使用','避免使用專業術語'],
+    ans: 2,
+    exp: '透明度原則：在CFP研究報告中應清楚說明所有相關假設、所使用的方法和數據，以便讀者能夠理解研究過程並對結果進行合理評估，故答案為 C。'
+  },
+  {
+    id: 60, tag: '碳足跡',
+    q: '在CFP研究中，如何避免GHG排放與移除的重複計算？',
+    opts: ['忽略所有間接排放','僅計算一次相同的GHG排放與移除','重複計算所有排放源','僅關注直接排放'],
+    ans: 1,
+    exp: '避免重複計算原則：相同的GHG排放與移除應僅被分配並計算一次，確保系統內GHG排放與移除計算的準確性，故答案為 B。'
+  },
+
+  // ===== PCR（2.3節）=====
+  {
+    id: 61, tag: 'PCR',
+    q: '產品碳足跡盤查過程中，針對特定產品/服務進行環境宣告之生命週期範疇界定的作業程序文件，稱之為何？',
+    opts: ['生命週期評估（LCA）','物質安全資料表（MSDS）','產品類別規則（PCR）','物質流成本分析（MFCA）'],
+    ans: 2,
+    exp: 'PCR（Product Category Rules，產品類別規則）是針對特定產品/服務進行環境宣告時的生命週期範疇界定作業程序文件，使相同功能產品的環境宣告具有一致比較基礎，故答案為 C。'
+  },
+  {
+    id: 62, tag: 'PCR',
+    q: '計算產品碳足跡時，須事先找尋符合的產品類別規則嗎？',
+    opts: ['需要','不需要','隨心情而定','以上皆可'],
+    ans: 0,
+    exp: '依據ISO 14067標準，若有相關的PCR或CFP-PCR時，應予採用。計算前必須先尋找是否有適用的PCR，有則採用，確保一致性和可比較性，故答案為 A。'
+  },
+  {
+    id: 63, tag: 'PCR',
+    q: '在產品類別規則（PCR）中，「功能單位」的目的是什麼？',
+    opts: ['確定產品的最低銷售價格','為產品系統量化績效提供參照單位','計算產品的生產成本','確定產品的市場定位'],
+    ans: 1,
+    exp: '功能單位：針對產品可使用之最小單位作為功能單位，引用為產品系統量化績效的參照單位，使不同產品/服務之環境影響具可比較性，故答案為 B。'
+  },
+  {
+    id: 64, tag: 'PCR',
+    q: 'PCR文件中提到的「系統邊界」是指什麼？',
+    opts: ['產品的銷售範圍','產品製造過程中使用的技術類型','決定哪些階段的範疇納入碳足跡計算','產品的利潤邊界'],
+    ans: 2,
+    exp: '系統邊界：針對各階段的範疇（時間、地域、技術、邊界等）納入與否的要求，確定哪個生命週期階段將被包括在碳足跡評估內，故答案為 C。'
+  },
+  {
+    id: 65, tag: 'PCR',
+    q: 'PCR中提及的「切斷規則」主要用於什麼目的？',
+    opts: ['確定產品的銷售策略','忽略碳足跡計算中的重要階段','允許忽略對總排放貢獻微小的過程','增加碳足跡計算的準確性'],
+    ans: 2,
+    exp: '切斷準則（截斷規則）：任何單一GHG排放源貢獻≦1%者可忽略，但累計不超過5%。允許排除對總排放貢獻微小的過程，簡化評估，故答案為 C。'
+  },
+  {
+    id: 66, tag: 'PCR',
+    q: '在PCR中，「分配規則」是指？',
+    opts: ['決定產品價格的機制','根據物理性質分配投入和產出的方法','選擇產品的銷售地區','計算產品利潤的規則'],
+    ans: 1,
+    exp: '分配規則：可依實際數量、重量、加權數值等物理性質作為分配之基本參數，將共同過程的環境負荷合理分配到各產品，故答案為 B。'
+  },
+  {
+    id: 67, tag: 'PCR',
+    q: '根據環境部的產品類別規則，對於生命週期各階段數據蒐集的要求，以下哪一項描述是正確的？',
+    opts: ['原料取得階段必須收集所有二級活動數據','生產製造階段僅需使用估算數據','優先採用一級活動數據，但不強制要求收集','銷售階段的數據可以完全忽略'],
+    ans: 2,
+    exp: '環境部PCR規定：原料取得階段「不強制要求收集」一級活動數據，但「應優先採用」一級活動數據。若無法取得才使用次級數據，故答案為 C。'
+  },
+  {
+    id: 68, tag: 'PCR',
+    q: '在PCR文件中，對於名詞定義的描述主要目的是什麼？',
+    opts: ['提供特定產品類別的專業術語解釋','詳述產品的市場定位和銷售策略','計算產品的生產成本和價格','確定產品的銷售地區和目標客戶'],
+    ans: 0,
+    exp: '名詞定義在PCR文件中的重要性在於提供清晰的術語解釋，確保所有參與碳足跡評估的利害關係者對專業術語有共同的理解，增加評估的透明度和準確性，故答案為 A。'
+  },
+  {
+    id: 69, tag: 'PCR',
+    q: '在進行產品碳足跡評估時，「功能單位」的設定主要用於實現什麼目標？',
+    opts: ['確定產品的廣告與推廣策略','作為衡量產品系統性能的基準點','計算產品的製造與銷售成本','確認產品在市場上的競爭力'],
+    ans: 1,
+    exp: '功能單位是衡量產品或服務環境影響的標準化參考基準點，使不同產品/服務之環境影響可以進行量化和公平比較，故答案為 B。'
+  },
+  {
+    id: 70, tag: 'PCR',
+    q: '在產品類別規則（PCR）中，設定「系統邊界」的主要目的是為了什麼？',
+    opts: ['確認產品的銷售區域和目標市場','計算產品的市場價值和銷售利潤','選擇產品的原材料來源和供應商','定義在碳足跡評估中將考慮哪些生命週期階段'],
+    ans: 3,
+    exp: '系統邊界明確界定在產品碳足跡評估過程中包括的範圍，如哪些生產階段、運輸階段等將被納入，確保評估的全面性和準確性，故答案為 D。'
+  },
+
+  // ===== LCA（2.4節）=====
+  {
+    id: 71, tag: 'LCA',
+    q: '衝擊評估階段屬於生命週期評估作業LCA的第幾階段？',
+    opts: ['第一階段','第二階段','第三階段','第四階段'],
+    ans: 2,
+    exp: 'LCA四大階段順序：1.目標與範疇界定 → 2.生命週期盤查分析（LCI）→ 3.生命週期衝擊評估（LCIA）→ 4.生命週期闡釋。衝擊評估為第三階段，故答案為 C。'
+  },
+  {
+    id: 72, tag: 'LCA',
+    q: '盤查分析階段屬於生命週期評估作業LCA的第幾階段？',
+    opts: ['第一階段','第二階段','第三階段','第四階段'],
+    ans: 1,
+    exp: 'LCA四大階段：1.目標與範疇界定 → 2.生命週期盤查分析（LCI）→ 3.衝擊評估（LCIA）→ 4.闡釋。盤查分析（LCI）為第二階段，故答案為 B。'
+  },
+  {
+    id: 73, tag: 'LCA',
+    q: '在LCA的衝擊評估階段，溫室氣體排放與移除量應選擇何種GWP值計算？',
+    opts: ['GWP-10年','GWP-100年','GWP-200年','GWP-500年'],
+    ans: 1,
+    exp: 'IPCC規定計算氣候變遷衝擊時，應採用「GWP-100年」（全球暖化潛勢100年）的特徵化因子，與組織型盤查一致，故答案為 B。'
+  },
+  {
+    id: 74, tag: 'LCA',
+    q: '使用生命週期評估進行產品碳足跡評估不會經歷哪個重要階段？',
+    opts: ['盤查分析','目標範疇定義','闡釋','實驗'],
+    ans: 3,
+    exp: 'LCA的四個標準階段為：目標與範疇界定、生命週期盤查分析（LCI）、衝擊評估（LCIA）、闡釋。「實驗」不是LCA的標準階段，故答案為 D。'
+  },
+  {
+    id: 75, tag: 'LCA',
+    q: '功能單位是在哪個生命週期階段被定義？',
+    opts: ['盤查分析','目標範疇定義','闡釋','生命週期衝擊評估'],
+    ans: 1,
+    exp: '功能單位在「目標與範疇界定」階段就必須清楚定義，以確保後續盤查分析和衝擊評估的計算有正確的參考基準，故答案為 B。'
+  },
+  {
+    id: 76, tag: 'LCA',
+    q: '生命週期評估（LCA）的目的是什麼？',
+    opts: ['僅評估產品的經濟效益','評估產品或服務從原物料取得到最終處置的環境影響','評估員工的工作效率','計算產品的市場價值'],
+    ans: 1,
+    exp: 'LCA（生命週期評估）的目的是全面評估產品或服務在整個生命週期（搖籃到墳墓）中對環境的潛在影響，包括能源使用、資源耗用、污染排放等，故答案為 B。'
+  },
+  {
+    id: 77, tag: 'LCA',
+    q: '在生命週期評估中，目標與範疇界定的重要性是什麼？',
+    opts: ['決定產品的價格','界定評估的範圍和目的，確保評估結果的有效應用','選擇適合的廣告平台','計算生產成本'],
+    ans: 1,
+    exp: '目標與範疇界定是LCA的第一步，明確定義評估的目的與範圍，使評估流程易於掌握，並確保評估結果能有效應用於決策過程，故答案為 B。'
+  },
+  {
+    id: 78, tag: 'LCA',
+    q: '生命週期盤查分析（LCI）主要包括哪些內容？',
+    opts: ['數據收集與清單計算','員工訓練計畫','銷售策略分析','市場調研'],
+    ans: 0,
+    exp: 'LCI（生命週期盤查分析）包括「數據收集」與「清單計算」兩大類，量化系統的相關投入（Input）與產出（Output），故答案為 A。'
+  },
+  {
+    id: 79, tag: 'LCA',
+    q: '生命週期衝擊評估（LCIA）的主要目標是什麼？',
+    opts: ['確定產品的最終銷售價格','評估產品生命週期中的環境衝擊','分析公司的財務狀況','評估市場競爭情況'],
+    ans: 1,
+    exp: 'LCIA（生命週期衝擊評估）：利用LCI的結果評估產品在其生命週期中對環境造成的潛在衝擊（如氣候變遷、酸化、優養化等），故答案為 B。'
+  },
+  {
+    id: 80, tag: 'LCA',
+    q: '生命週期闡釋的目的是什麼？',
+    opts: ['提高產品銷量','合併盤查分析與衝擊評估結果，提供決策支持','選擇供應商','招聘員工'],
+    ans: 1,
+    exp: '生命週期闡釋（LCA第四階段）：整合LCI和LCIA的結果，與評估目的和範圍相匹配，以結論與建議的形式提供給決策者，作為產品設計改善等決策的參考，故答案為 B。'
+  },
+
+  // ===== 考科1 第一章：COP歷程 =====
+  { id:81, tag:'COP歷程', q:'聯合國氣候變遷大會締約方大會（COP）是在哪一年第一次召開？', opts:['1992年','1994年','1995年','1997年'], ans:2, exp:'1995年：第一屆締約方會議（COP1）在德國柏林舉行。1992年UNFCCC成立，1994年公約生效，1997年京都議定書通過。' },
+  { id:82, tag:'COP歷程', q:'《聯合國氣候變化框架公約》（UNFCCC）的最終目標是什麼？', opts:['限制全球平均氣溫上升','降低全球糧食生產量','增加全球綠化覆蓋率','減少全球人口數量'], ans:0, exp:'UNFCCC的最終目標：將大氣中的溫室氣體濃度穩定在防止氣候系統受到危險的人為干擾的水準，故答案為 A。' },
+  { id:83, tag:'COP歷程', q:'京都議定書要求附件一國家的溫室氣體排放量平均減量百分比是多少？', opts:['3.2%','4.5%','5.2%','6.3%'], ans:2, exp:'京都議定書要求附件一國家以1990年為基準，平均減量5.2%，故答案為 C。' },
+  { id:84, tag:'COP歷程', q:'《京都議定書》於哪一年正式生效？', opts:['1997年','2001年','2005年','2008年'], ans:2, exp:'京都議定書1997年通過，因批准程序複雜，於2005年2月16日才正式生效，故答案為 C。' },
+  { id:85, tag:'COP歷程', q:'巴黎協定旨在將全球溫室氣體排放限制在遠低於幾度攝氏的水平？', opts:['1℃','1.5℃','2℃','2.5℃'], ans:2, exp:'巴黎協定目標：將全球氣溫較工業化前水準上升幅度控制在「遠低於2℃」，並努力限制在1.5℃以內。題目問遠低於的目標值，故答案為 C（2℃）。' },
+  { id:86, tag:'COP歷程', q:'由於COVID-19大流行，哪一年COP未能舉行實體會議？', opts:['2019年','2020年','2021年','2022年'], ans:1, exp:'2020年因COVID-19大流行，COP未舉行實體會議，故答案為 B。' },
+  { id:87, tag:'COP歷程', q:'《巴黎協定》要求各國提交NDC的連續更新周期是多久？', opts:['每三年一次','每五年一次','每七年一次','每十年一次'], ans:1, exp:'巴黎協定以「五年」為一個週期，各國定期提交並更新NDC，每一連續NDC應比前一個更具企圖心，故答案為 B。' },
+  { id:88, tag:'COP歷程', q:'京都議定書的彈性減量機制不包括下列哪項？', opts:['清潔發展機制（CDM）','排放交易（ET）','共同執行（JI）','環境可持續指數（ESI）'], ans:3, exp:'京都議定書三大彈性機制：CDM、ET（排放交易）、JI（共同執行）。「環境可持續指數ESI」不屬於其中，故答案為 D。' },
+  { id:89, tag:'COP歷程', q:'《京都議定書》的第一期減量時程是從哪年到哪年？', opts:['1996年至2000年','1998年至2002年','2000年至2004年','2008年至2012年'], ans:3, exp:'京都議定書第一承諾期的減量時程為「2008年至2012年」，故答案為 D。' },
+  { id:90, tag:'COP歷程', q:'COP28正式通過設立什麼機制來支持因氣候變遷遭受重大損失的國家？', opts:['綠色氣候基金','國際環境機構','損失和損害資金','全球氣候恢復基金'], ans:2, exp:'COP28（2023年，阿聯酋杜拜）正式通過設立「損失和損害資金（FRLD）」，截至2024年9月承諾達7.2億美元，故答案為 C。' },
+  { id:91, tag:'COP歷程', q:'台灣設定的國家溫室氣體長期減量目標是什麼？', opts:['112年淨零排放','120年淨零排放','139年淨零排放','150年淨零排放'], ans:2, exp:'台灣（中華民國）設定的目標是「民國139年（西元2050年）溫室氣體淨零排放」，已納入氣候變遷因應法，故答案為 C。' },
+  { id:92, tag:'COP歷程', q:'台灣在因應氣候變遷的基本原則中，不包括以下哪項？', opts:['遵循「巴黎協定」','實施碳交易制度','新增核能發電','增強資訊公開及公民參與'], ans:2, exp:'台灣基本原則中明確指出「不以新增核能發電作為因應氣候變遷措施」，逐步降低化石燃料依賴，故答案為 C。' },
+
+  // ===== 考科1 第一章：專有名詞 =====
+  { id:93, tag:'專有名詞', q:'氣候變遷調適（Adaptation）是指？', opts:['降低二氧化碳排放','增加綠色植被面積','人類與自然系統回應氣候變遷風險的調整過程','減少工業化進程'], ans:2, exp:'氣候變遷調適：人類與自然系統為回應實際、預期氣候變遷風險或其影響之調整適應過程，故答案為 C。' },
+  { id:94, tag:'專有名詞', q:'碳中和（Carbon Neutrality）指的是？', opts:['完全停止二氧化碳排放','主體相關的人為CO₂排放量與移除量達平衡狀態','對碳排放量進行監控','增加二氧化碳的吸收'], ans:1, exp:'碳中和：於特定範疇內之主體相關的人為CO₂排放量與人為CO₂移除量達「平衡」的狀態，故答案為 B。' },
+  { id:95, tag:'專有名詞', q:'碳洩漏（Carbon Leakage）是指？', opts:['碳的物理洩漏','碳排放管制導致產業轉移到碳管制較寬鬆的地區','植物吸收二氧化碳的過程','溫室氣體的自然循環'], ans:1, exp:'碳洩漏：實施碳管制後，可能導致產業外移至碳管制較寬鬆的國家，反而增加全球碳排量，故答案為 B。' },
+  { id:96, tag:'專有名詞', q:'碳定價（Carbon pricing）通常被視為以下哪一項？', opts:['溫室氣體排放的獎勵計劃','減緩政策努力過程的經濟手段','增加碳排放的懲罰措施','一種氣候變遷適應措施'], ans:1, exp:'碳定價為CO₂排放訂定價格之政策工具，多被作為「減緩政策努力過程的經濟手段」，故答案為 B。' },
+  { id:97, tag:'專有名詞', q:'組織邊界（organizational boundary）的定義是什麼？', opts:['組織建築的實體邊界','組織財務報告中所包含的邊界','組織的行銷範圍','組織管理控制範圍內的活動或設施'], ans:3, exp:'組織邊界（ISO 14064-1）：可在組織內運用營運或財務管控或具有股權持分的歸類之活動或設施，故答案為 D。' },
+  { id:98, tag:'專有名詞', q:'直接溫室氣體排放指的是什麼？', opts:['來自組織所擁有或控制的溫室氣體源的排放','任何溫室氣體的排放','由消費者排放的溫室氣體','來自自然源的溫室氣體排放'], ans:0, exp:'直接溫室氣體排放（類別1）：來自組織所擁有或控制的溫室氣體源之排放，如自有鍋爐、公務車，故答案為 A。' },
+  { id:99, tag:'專有名詞', q:'產品碳足跡（CFP）是指？', opts:['單一產品的製造成本','產品從生產到銷毀的總能耗','產品的市場價值','產品系統中溫室氣體排放與移除的總和'], ans:3, exp:'CFP（Carbon Footprint of a Product）：產品系統中GHG排放與移除的總和，根據LCA採用氣候變遷單一衝擊類別以CO₂當量表示，故答案為 D。' },
+  { id:100, tag:'專有名詞', q:'總量管制與排放交易（Cap and Trade）的主要特點是什麼？', opts:['為溫室氣體排放設定不變上限','為溫室氣體排放設定上限並允許排放權的交易','僅限於管制碳排放的產業','鼓勵企業自由排放溫室氣體'], ans:1, exp:'Cap and Trade：政府設定排放總上限（cap），分割為可交易的排放額度（allowances），企業可買賣配額，以市場機制達成最低成本減排，故答案為 B。' },
+
+  // ===== 考科1 CDP/SBTi/RE100 =====
+  { id:101, tag:'CDP/SBTi/RE100', q:'CDP成立於哪一年？', opts:['1995年','2000年','2005年','2010年'], ans:1, exp:'CDP（碳揭露計畫）於2000年成立，最初專注於碳揭露，後發展成全球性環境揭露系統，故答案為 B。' },
+  { id:102, tag:'CDP/SBTi/RE100', q:'CDP的數據集重點不包括哪一項？', opts:['氣候變化','森林砍伐','水安全','城市擴張'], ans:3, exp:'CDP揭露領域：氣候變化、水安全、森林（砍伐），後新增生物多樣性、塑膠。「城市擴張」不是CDP重點，故答案為 D。' },
+  { id:103, tag:'CDP/SBTi/RE100', q:'科學基礎減量目標倡議（SBTi）是由哪些組織共同發起的？', opts:['IEA、紅十字會、WHO','綠色和平、WTO、IOC','聯合國全球盟約、CDP、WRI、WWF','紅十字會、IEA、綠色和平'], ans:2, exp:'SBTi由四大組織共同發起：CDP、聯合國全球盟約（UNGC）、世界資源研究所（WRI）、世界自然基金會（WWF），故答案為 C。' },
+  { id:104, tag:'CDP/SBTi/RE100', q:'SBTi的主要目標是為了符合哪個國際協議的目標？', opts:['京都議定書','蒙特利爾議定書','瑞士議定書','巴黎協定'], ans:3, exp:'SBTi設立主要是為了支援《巴黎協定》的目標，將全球溫升控制在1.5℃以內，故答案為 D。' },
+  { id:105, tag:'CDP/SBTi/RE100', q:'SBTi推動企業實現淨零排放的策略中，不包括以下哪項？', opts:['僅依賴碳抵換','設定近期快速深度減排目標','中和殘餘排放','設定長期目標'], ans:0, exp:'SBTi強調企業必須進行「實質減排」，不能僅依賴碳抵換。碳抵換只能用於中和無法避免的剩餘排放，故答案為 A。' },
+  { id:106, tag:'CDP/SBTi/RE100', q:'企業申請設定SBTi科學基礎減排目標的第一步是什麼？', opts:['提交承諾信給SBTi','公開其碳排放量','直接開始減排','與利害關係人溝通'], ans:0, exp:'SBTi申請五步驟：承諾→發展→提交→溝通→揭露。第一步是向SBTi提交「承諾信」，故答案為 A。' },
+  { id:107, tag:'CDP/SBTi/RE100', q:'如何確保SBTi科學基礎減排目標保持最新有效？', opts:['每10年重新設定','目標永久有效','只初次審核','每5年重新審核或調整'], ans:3, exp:'SBTi要求企業「每5年」對目標進行重新審核或調整，確保與最新科學和全球氣候行動目標一致，故答案為 D。' },
+  { id:108, tag:'CDP/SBTi/RE100', q:'RE100倡議的主要目的是什麼？', opts:['減少全球碳排放','實現100%使用再生能源','增加全球溫度','減少企業利潤'], ans:1, exp:'RE100（再生能源100）：鼓勵企業承諾在2020至2050年間實現「100%使用再生能源（綠電）」的目標，故答案為 B。' },
+  { id:109, tag:'CDP/SBTi/RE100', q:'加入RE100的企業每年至少需要有多少GWh的再生能源需求？', opts:['每年至少50GWh','每年至少100GWh','每年至少200GWh','每年至少500GWh'], ans:1, exp:'RE100一般規範1：加入的企業每年至少有「100GWh的再生能源需求」，確保具有顯著推動影響，故答案為 B。' },
+  { id:110, tag:'CDP/SBTi/RE100', q:'RE100成員需要在哪一年達到60%的可再生電力使用率？', opts:['2020年','2030年','2040年','2050年'], ans:1, exp:'RE100階段目標：2030年達到60%、2040年達到90%、2050年達到100%，故答案為 B。' },
+
+  // ===== 考科1 GRI/TCFD =====
+  { id:111, tag:'GRI/TCFD', q:'GRI報告框架中，哪個準則提供了報告的基礎原則和報告過程？', opts:['GRI 101：基礎','GRI 102：一般揭露','GRI 103：管理方法','GRI行業準則'], ans:0, exp:'GRI 101「基礎」是所有組織進行GRI報告時必須遵守的首要準則，提供報告目的、原則及報告過程，故答案為 A。' },
+  { id:112, tag:'GRI/TCFD', q:'以下哪個不是GRI報告框架的一部分？', opts:['GRI通用準則','GRI行業準則','GRI主題準則','GRI財務準則'], ans:3, exp:'GRI框架由三部分組成：通用準則、行業準則、主題準則。沒有「GRI財務準則」，故答案為 D。' },
+  { id:113, tag:'GRI/TCFD', q:'TCFD的四大核心要素不包括以下哪一項？', opts:['策略','治理','資產管理','風險管理'], ans:2, exp:'TCFD四大核心要素：治理、策略、風險管理、指標與目標。「資產管理」不是其中之一，故答案為 C。' },
+  { id:114, tag:'GRI/TCFD', q:'哪個國際機構於2015年成立了TCFD工作小組？', opts:['聯合國','世界銀行','國際金融穩定委員會（FSB）','國際貨幣基金組織（IMF）'], ans:2, exp:'TCFD工作小組於2015年由「國際金融穩定委員會（FSB）」成立，故答案為 C。' },
+  { id:115, tag:'GRI/TCFD', q:'TCFD提出的「轉型風險」主要與以下哪一項相關？', opts:['氣候災害的直接影響','極端天氣的發生頻率','低碳轉型對企業的影響','長期的資產壽命管理'], ans:2, exp:'轉型風險：因低碳轉型對企業營運帶來的衝擊，包括政策法規、技術、市場及名譽，故答案為 C。' },
+
+  // ===== 考科1 CBAM詳細 =====
+  { id:116, tag:'CBAM詳細', q:'歐盟碳排放交易體系（EU ETS）自何年開始實施？', opts:['2000年','2005年','2010年','2015年'], ans:1, exp:'EU ETS自2005年開始實施，是全球最大的碳排放交易市場，故答案為 B。' },
+  { id:117, tag:'CBAM詳細', q:'歐盟計劃從哪一年開始逐漸取消ETS的免費排放配額？', opts:['2020年','2023年','2026年','2034年'], ans:2, exp:'從2026年開始至2034年，歐盟逐漸取消ETS免費排放配額，配合CBAM正式實施，故答案為 C。' },
+  { id:118, tag:'CBAM詳細', q:'CBAM規定進口商必須在每年的哪一天前繳交足夠的CBAM憑證？', opts:['1月1日','3月31日','5月31日','12月31日'], ans:2, exp:'歐盟進口商須於每年「5月31日」前繳交足以抵銷前一年進口產品總碳含量之CBAM憑證，故答案為 C。' },
+  { id:119, tag:'CBAM詳細', q:'CBAM憑證的價格根據什麼確定？', opts:['歐盟委員會固定價格','每年歐盟預算','歐盟ETS排放額度拍賣的平均價格','國際碳價'], ans:2, exp:'CBAM憑證價格根據「當週歐盟ETS排放額度拍賣的平均價格」確定，若當週無拍賣則用上一週平均，故答案為 C。' },
+  { id:120, tag:'CBAM詳細', q:'CBAM過渡期間是從哪一年開始到哪一年結束？', opts:['2020年至2023年','2021年至2024年','2023年至2025年','2026年至2030年'], ans:2, exp:'CBAM過渡期從2023年10月1日開始，至2025年結束，讓各國業者有充裕時間準備，故答案為 C。' },
+
+  // ===== 考科1 台灣淨零 =====
+  { id:121, tag:'台灣淨零', q:'台灣2050淨零排放策略的主要目標是什麼？', opts:['增加工業產出','達到淨零溫室氣體排放','加倍能源消耗','減少經濟成長'], ans:1, exp:'台灣2050淨零排放策略的核心目標就是「達到淨零溫室氣體排放」，故答案為 B。' },
+  { id:122, tag:'台灣淨零', q:'台灣長期淨零過渡中，哪項技術被提及為關鍵？', opts:['區塊鏈','碳捕獲與封存（CCUS）','傳統的煤電廠','柴油引擎'], ans:1, exp:'台灣淨零路徑中，CCUS（碳捕捉再利用及封存）是長期零碳電力系統的關鍵技術，故答案為 B。' },
+  { id:123, tag:'台灣淨零', q:'在非電力能源去碳化方面，台灣計劃採取哪些措施來取代化石燃料？', opts:['僅加速電氣化進程','僅投入生質能開發','投入氫能與生質能開發並搭配CCUS技術','僅使用氫能'], ans:2, exp:'台灣非電力去碳化：除加速電氣化外，還投入「氫能與生質能」開發，搭配CCUS技術，故答案為 C。' },
+
+  // ===== 考科1 碳定價制度 =====
+  { id:124, tag:'碳定價制度', q:'總量管制排放交易主要目的是什麼？', opts:['增加企業稅收','減少溫室氣體排放','促進國際貿易','增加政府監管'], ans:1, exp:'Cap and Trade：透過設定排放上限並允許配額交易，以市場機制促使企業以最低成本減排，故答案為 B。' },
+  { id:125, tag:'碳定價制度', q:'我國如果課徵碳稅通常由哪個部門徵收？', opts:['環境部','財政部','金管會','行政院'], ans:1, exp:'碳稅由財政部門徵收（我國為財政部），收入成為政府財政收入，使用彈性較大；碳費則由環境部徵收，故答案為 B。' },
+  { id:126, tag:'碳定價制度', q:'碳稅與碳費的主要區別在於什麼？', opts:['徵收金額','徵收對象','徵收機關和資金的使用彈性','影響的行業範圍'], ans:2, exp:'碳稅與碳費的主要區別：徵收機關不同（財政部vs環境部）、資金使用彈性不同（碳稅廣泛支出；碳費專款專用），故答案為 C。' },
+  { id:127, tag:'碳定價制度', q:'內部碳定價中，對每噸CO₂排放設定固定費用的方式稱為什麼模式？', opts:['碳稅模式','碳交易模式','影子碳定價','自願減量模式'], ans:0, exp:'內部碳定價三種方式：碳稅模式（每噸固定費）、碳交易模式（設內部上限交易）、影子碳定價（假設性評估）。對每噸排放徵費屬碳稅模式，故答案為 A。' },
+  { id:128, tag:'碳定價制度', q:'碳費試申報不繳費的年份是？', opts:['113年','114年','115年','116年'], ans:1, exp:'碳費費率114年1月1日公告生效，「114年試申報不繳費」，115年才依114年排放量及費率繳費，故答案為 B。' },
+  { id:129, tag:'碳定價制度', q:'以下哪一項不符合台灣碳權交易所的上架標準？', opts:['符合GS或Verra','減量效益與申請上架相距超過5年','符合SDGs至少3項','排除爭議性專案'], ans:1, exp:'台灣碳交所規定：減量效益發生年度與申請上架年度距離「不超過5年」。選項B超過5年，故答案為 B。' },
+
+  // ===== 考科1 ISO 14068-1 =====
+  { id:130, tag:'ISO14068', q:'ISO 14068-1碳中和標準於哪一年推出？', opts:['2020','2021','2022','2023'], ans:3, exp:'ISO 14068-1由國際標準組織於「2023年11月」推出，取代PAS 2060:2014，故答案為 D。' },
+  { id:131, tag:'ISO14068', q:'ISO 14068-1的核心目的是什麼？', opts:['提供國家碳排放報告統一格式','透過量化、減排和碳抵換實現碳中和','將碳足跡數據轉化為經濟指標','減少國際間碳排放報告數據衝突'], ans:1, exp:'ISO 14068-1核心：透過量化、減少及抵消碳足跡，推動實體邁向低碳發展與永續目標，實現與宣示碳中和，故答案為 B。' },
+  { id:132, tag:'ISO14068', q:'ISO 14068-1的適用範圍中，下列哪一項不包括？', opts:['金融機構','地方政府','商品或服務','領土（如國家或城市）'], ans:3, exp:'ISO 14068-1適用於組織和產品，但「不適用於領土（如國家、城市）」，國家層級有UNFCCC等專屬框架，故答案為 D。' },
+  { id:133, tag:'ISO14068', q:'根據ISO 14068-1，至少多久需要重新量化溫室氣體排放量？', opts:['每半年','每年','每兩年','每三年'], ans:1, exp:'ISO 14068-1規定組織應至少「每年」重新盤查，確保數據時效性與準確性，故答案為 B。' },
+  { id:134, tag:'ISO14068', q:'ISO 14068-1的碳中和聲明需包含哪些資訊？', opts:['碳中和範疇與邊界','碳足跡量及抵換量','查證人及查證日期','以上皆是'], ans:3, exp:'碳中和聲明應包含：範疇與邊界、排放移除量、已抵換碳足跡量、碳信用類型、查證資訊等，故以上皆是，答案為 D。' },
+
+  // ===== 考科2模擬題 =====
+  { id:135, tag:'盤查原則', q:'以下何者是屬於組織型溫室氣體盤查的類別1排放源？', opts:['員工出差','鍋爐','外購電力','採購原物料'], ans:1, exp:'類別1（直接排放）：來自組織自有或控制的排放源，如鍋爐燃燒。員工出差屬類別3；外購電力屬類別2；採購原物料屬類別4，故答案為 B。' },
+  { id:136, tag:'台灣淨零', q:'台灣2050淨零排放路徑藍圖包括四大轉型策略，但「不包含」以下何者？', opts:['社會轉型','能源轉型','生活轉型','教育轉型'], ans:3, exp:'台灣四大轉型策略：能源轉型、產業轉型、生活轉型、社會轉型。「教育轉型」不在其中，故答案為 D。' },
+  { id:137, tag:'LCA', q:'依據ISO 14040，以下何者不屬於生命週期評估之階段？', opts:['目標與範疇界定','盤查分析','衝擊評估','查證確認'], ans:3, exp:'LCA四個階段：目標與範疇界定、盤查分析（LCI）、衝擊評估（LCIA）、闡釋。「查證確認」屬ISO 14064-3範疇，不是LCA階段，故答案為 D。' },
+  { id:138, tag:'碳足跡', q:'溫室氣體盤查的類別1直接排放與類別2外購能源排放，屬於產品生命週期的哪一階段？', opts:['原料取得階段','生產製造階段','配銷階段','產品使用階段'], ans:1, exp:'工廠自身直接排放（類別1）和外購電力（類別2）均發生在「生產製造階段」，故答案為 B。' },
+  { id:139, tag:'邊界', q:'溫室氣體盤查議定書（GHG Protocol）的組織邊界設定方法，以下何者為非？', opts:['刪除法','控制法','股權比例法','以上皆是'], ans:0, exp:'GHG Protocol組織邊界方法為：控制法（財務/營運控制法）和股權比例法。「刪除法」不存在，故答案為 A。' },
+  { id:140, tag:'盤查原則', q:'下列何者為ISO 14064-1:2018強制要求應揭露項目？', opts:['外購電力之上游間接排放','生物源二氧化碳移除之處理','廢水汙泥處理排放','以上皆是'], ans:1, exp:'「生物源CO₂移除之處理」是ISO 14064-1:2018中強制應揭露的項目，其他兩項不是，故答案為 B。' },
+  { id:141, tag:'盤查原則', q:'針對支持未來盤查活動結果的聲明之各項假設、限制及方法之合理性進行之評估過程是？', opts:['確證活動','假設活動','查證活動','以上皆是'], ans:0, exp:'確證（Validation）：針對支持「未來活動結果」聲明之假設、限制及方法之合理性進行的評估。查證針對歷史數據，故答案為 A。' },
+  { id:142, tag:'GRI/TCFD', q:'永續揭露準則第S2號「氣候相關揭露」，要求企業應揭露哪些範疇之排放量？', opts:['範疇1','範疇1+2','範疇1+2+3','以上皆非'], ans:2, exp:'IFRS ISSB的S2（氣候相關揭露）要求揭露「範疇1+2+3」，以完整揭露整個價值鏈的排放，故答案為 C。' },
+  { id:143, tag:'量化', q:'企業盤查涉及土地利用、土地利用變化及林業（LULUCF）時，通常設定採行措施後之期間以幾年為宜？', opts:['10年','20年','100年','以上皆非'], ans:1, exp:'涉及LULUCF排放與移除，通常設定採行措施後「20年」為評估期間，故答案為 B。' },
+  { id:144, tag:'量化', q:'A公司為實收資本額60億的上櫃公司。依金管會規定必須完成盤查並於民國哪一年開始申報（範疇一二）？', opts:['113年','114年','115年','116年'], ans:1, exp:'金管會規定：資本額達一定規模的上市櫃公司，實收資本額60億的上櫃公司須於「114年」開始申報溫室氣體盤查，故答案為 B。' },
+  { id:145, tag:'邊界', q:'A公司進口鋁車架組件，其製造過程需使用大量電力熔煉鋁材。在A公司的盤查中這是屬於哪種排放類別？', opts:['類別四：由資產使用產生之排放','類別三：由貨物上游運輸產生之排放','類別四：由採購之貨物產生之排放','以上皆非'], ans:2, exp:'購買的零組件在製造過程消耗大量電力所產生的排放，屬於「類別4：由採購之貨物和服務產生的間接排放」，故答案為 C。' },
+  { id:146, tag:'量化', q:'環境部113年公布的排放係數採用IPCC第幾次評估所公告之溫室氣體暖化潛勢？', opts:['AR4','AR5','AR6','以上皆非'], ans:1, exp:'環境部113年公布的排放係數採用「IPCC第五次評估報告（AR5）」的GWP值，故答案為 B。' },
+  { id:147, tag:'量化', q:'鍋爐由燃油改用天然氣致使總排放量較基準年減少3.5%，需重新計算基準年。這引用的是哪種門檻標準？', opts:['申報門檻','顯著性門檻','實質性門檻','排除門檻'], ans:1, exp:'「顯著性門檻」：環境部規定累計變化量高於3%時，需重新計算基準年排放量。3.5%超過門檻，故引用顯著性門檻，答案為 B。' },
+  { id:148, tag:'量化', q:'溫室氣體排放量盤查登錄及查驗管理辦法規定，總排放量應計算四捨五入至小數點後第幾位？', opts:['第10位','第4位','第3位','以上皆非'], ans:2, exp:'依環境部規定，溫室氣體總排放量計算應四捨五入至「小數點後第3位」（精確到0.001公噸CO₂e），故答案為 C。' },
+  { id:149, tag:'量化', q:'公司耗用乙炔C₂H₂（分子量26）100公斤用於熔接作業。依質量平衡法計算，總共排放多少公斤CO₂？', opts:['338.4615公斤','33.8461公斤','3.3846公斤','以上皆非'], ans:0, exp:'計算：2C₂H₂ + 5O₂ → 4CO₂ + 2H₂O。排放係數 = 88/26 = 3.3846。100 × 3.3846 = 338.4615 kg CO₂，故答案為 A。' },
+  { id:150, tag:'量化', q:'某工廠：電力500,000 kWh（0.527kg CO₂/kWh）、柴油20,000公升（2.68kg CO₂/L）、天然氣100,000m³（1.85kg CO₂/m³）。一年總CO₂排放量為？', opts:['371,350公斤','502,100公斤','413,000公斤','421,500公斤'], ans:1, exp:'電力：500,000×0.527=263,500；柴油：20,000×2.68=53,600；天然氣：100,000×1.85=185,000。總計=502,100 kg，故答案為 B。' },
+  { id:151, tag:'碳足跡', q:'以下何者是需被納入B2C產品碳足跡計算，但B2B產品不需被納入的生命週期階段？', opts:['產品使用階段','原料取得階段','生產製造階段','以上皆須列入計算'], ans:0, exp:'B2C採「搖籃到墳墓」含使用階段；B2B採「搖籃到大門」不含使用和廢棄階段，故答案為 A。' },
+  { id:152, tag:'碳足跡', q:'以下何者為B2C產品在生命週期的描述方式？', opts:['從搖籃到大門','從搖籃到墳墓','從搖籃到天堂','以上皆非'], ans:1, exp:'B2C（可直接在消費市場販售之最終產品如電視機）：「搖籃到墳墓」，涵蓋完整生命週期含廢棄處理，故答案為 B。' },
+  { id:153, tag:'碳足跡', q:'以下何者為B2B產品在生命週期的描述方式？', opts:['從搖籃到大門','從搖籃到墳墓','從搖籃到天堂','以上皆非'], ans:0, exp:'B2B（須再經組裝之半成品如IC、面板模組）：「搖籃到大門」，只計算到離開工廠為止，故答案為 A。' },
+  { id:154, tag:'量化', q:'A公司為實收資本額60億的上櫃公司，為配合IFRS S2需盤查範疇三，金管會規定必須完成盤查並於民國哪一年開始申報？（不考慮首年免申報）', opts:['115年','116年','117年','118年'], ans:2, exp:'金管會規定範疇三的盤查申報時程，60億上櫃公司須於「117年」開始申報範疇三排放量（IFRS S2要求），故答案為 C。' },
+  { id:155, tag:'量化', q:'公司餐廳使用5瓶液化石油氣（每瓶20公斤）。液化石油氣排放係數為2.21 kgCO₂e/公升（固定源燃燒）、0.453 kgCO₂e/公升（未燃燒），1公斤=1.818公升。總共排放多少公斤CO₂e？', opts:['221.0000公斤','45.3000公斤','319.4226公斤','以上皆非'], ans:2, exp:'計算：5×20×1.818=181.8公升。燃燒排放=181.8×（2.21−0.453）=181.8×1.757=319.4226 kgCO₂e，故答案為 C。' }
+];
+
+// ==================== STATE ====================
+let currentFilter = 'all';
+let filteredQs = [];
+let currentIdx = 0;
+let answers = {}; // idx -> chosen option index
+let correctSet = new Set();
+let wrongSet = new Set();
+
+function getFilteredQuestions() {
+  if (currentFilter === 'all') return [...ALL_QUESTIONS];
+  if (currentFilter === 'wrong') {
+    const wrongIds = [...wrongSet];
+    return ALL_QUESTIONS.filter(q => wrongIds.includes(q.id));
+  }
+  return ALL_QUESTIONS.filter(q => q.tag === currentFilter);
+}
+
+function setFilter(f) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  filteredQs = getFilteredQuestions();
+  currentIdx = 0;
+  answers = {};
+  renderSidebar();
+  renderQuestion();
+  updateScoreScreen(false);
+}
+
+function shuffle() {
+  filteredQs = getFilteredQuestions().sort(() => Math.random() - 0.5);
+  currentIdx = 0;
+  answers = {};
+  renderSidebar();
+  renderQuestion();
+  updateScoreScreen(false);
+}
+
+function resetAll() {
+  answers = {};
+  correctSet = new Set();
+  wrongSet = new Set();
+  currentIdx = 0;
+  filteredQs = getFilteredQuestions();
+  updateScoreScreen(false);
+  renderSidebar();
+  renderQuestion();
+  updateHeader();
+}
+
+// ==================== RENDER ====================
+function renderQuestion() {
+  if (filteredQs.length === 0) {
+    document.getElementById('q-text').textContent = '沒有符合條件的題目';
+    document.getElementById('options').innerHTML = '';
+    document.getElementById('explanation').classList.remove('show');
+    return;
+  }
+  const q = filteredQs[currentIdx];
+  document.getElementById('q-num-badge').textContent = `Q ${currentIdx + 1} / ${filteredQs.length}`;
+  document.getElementById('q-tag-badge').textContent = q.tag;
+  document.getElementById('q-text').textContent = q.q;
+
+  const opts = document.getElementById('options');
+  opts.innerHTML = '';
+  const labels = ['A','B','C','D'];
+  const answered = answers.hasOwnProperty(currentIdx);
+
+  q.opts.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn';
+    if (answered) {
+      btn.disabled = true;
+      if (i === q.ans) btn.classList.add('correct');
+      else if (i === answers[currentIdx] && answers[currentIdx] !== q.ans) btn.classList.add('wrong');
+    }
+    btn.innerHTML = `<span class="opt-label">${labels[i]}</span><span style="flex:1">${opt}</span>${answered && i === q.ans ? '<span class="opt-icon">✓</span>' : (answered && i === answers[currentIdx] && answers[currentIdx] !== q.ans ? '<span class="opt-icon">✗</span>' : '')}`;
+    if (!answered) btn.onclick = () => selectAnswer(i);
+    opts.appendChild(btn);
+  });
+
+  // Explanation
+  const expDiv = document.getElementById('explanation');
+  if (answered) {
+    const correct = answers[currentIdx] === q.ans;
+    expDiv.className = 'explanation show' + (correct ? '' : ' wrong-exp');
+    document.getElementById('exp-title').textContent = correct ? '✓ 解析' : '✗ 錯了！解析如下';
+    document.getElementById('exp-content').innerHTML = `<strong>正確答案：${labels[q.ans]}（${q.opts[q.ans]}）</strong><br><br>${q.exp}`;
+  } else {
+    expDiv.className = 'explanation';
+  }
+
+  // Next button
+  const nextBtn = document.getElementById('next-btn');
+  if (currentIdx === filteredQs.length - 1) {
+    nextBtn.textContent = '完成測驗';
+    nextBtn.onclick = showScore;
+  } else {
+    nextBtn.textContent = '下一題 →';
+    nextBtn.onclick = nextQ;
+  }
+
+  updateProgress();
+  updateDots();
+}
+
+function selectAnswer(i) {
+  const q = filteredQs[currentIdx];
+  answers[currentIdx] = i;
+  if (i === q.ans) correctSet.add(q.id);
+  else { wrongSet.add(q.id); correctSet.delete(q.id); }
+  updateHeader();
+  renderQuestion();
+}
+
+function nextQ() {
+  if (currentIdx < filteredQs.length - 1) { currentIdx++; renderQuestion(); }
+}
+function prevQ() {
+  if (currentIdx > 0) { currentIdx--; renderQuestion(); }
+}
+
+function updateProgress() {
+  const answered = Object.keys(answers).length;
+  const total = filteredQs.length;
+  document.getElementById('progress-text').textContent = `${answered} / ${total}`;
+  document.getElementById('progress-fill').style.width = total ? `${(answered/total)*100}%` : '0%';
+}
+
+function renderSidebar() {
+  const grid = document.getElementById('q-grid');
+  grid.innerHTML = '';
+  filteredQs.forEach((q, i) => {
+    const dot = document.createElement('div');
+    dot.className = 'q-dot';
+    dot.textContent = i + 1;
+    if (i === currentIdx) dot.classList.add('current');
+    if (answers.hasOwnProperty(i)) {
+      dot.classList.add(answers[i] === q.ans ? 'correct' : 'wrong');
+    }
+    dot.onclick = () => { currentIdx = i; renderQuestion(); updateDots(); };
+    grid.appendChild(dot);
+  });
+}
+
+function updateDots() {
+  const dots = document.querySelectorAll('.q-dot');
+  dots.forEach((d, i) => {
+    d.classList.toggle('current', i === currentIdx);
+  });
+}
+
+function updateHeader() {
+  const c = correctSet.size;
+  const w = wrongSet.size;
+  const total = c + w;
+  document.getElementById('hdr-correct').textContent = c;
+  document.getElementById('hdr-wrong').textContent = w;
+  document.getElementById('hdr-rate').textContent = total > 0 ? Math.round(c/total*100) + '%' : '—';
+}
+
+function showScore() {
+  const total = filteredQs.length;
+  const answered = Object.keys(answers).length;
+  let correct = 0;
+  filteredQs.forEach((q, i) => {
+    if (answers.hasOwnProperty(i) && answers[i] === q.ans) correct++;
+  });
+  document.getElementById('score-num').textContent = answered > 0 ? Math.round(correct/answered*100) + '%' : '0%';
+  document.getElementById('score-detail').innerHTML = `答對 ${correct} 題 / 共答 ${answered} 題（共 ${total} 題）<br>錯題數：${wrongSet.size} 題`;
+  updateScoreScreen(true);
+}
+
+function updateScoreScreen(show) {
+  document.getElementById('score-screen').style.display = show ? 'flex' : 'none';
+  document.getElementById('main-area').style.display = show ? 'none' : 'flex';
+}
+
+// ==================== INIT ====================
+filteredQs = getFilteredQuestions();
+renderSidebar();
+renderQuestion();
+</script>
+</body>
+</html>
